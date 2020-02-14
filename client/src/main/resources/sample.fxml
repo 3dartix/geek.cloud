@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.net.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?scenebuilder-stylesheet /css/Styles.css?>
+
+<VBox alignment="center" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="JavaFXClient.Client.Controller">
+    <stylesheets><URL value="@/Style.css" /></stylesheets>
+
+    <MenuBar fx:id="menuBar" />
+
+    <TextArea fx:id="textArea" editable="false" VBox.vgrow="ALWAYS" />
+    <HBox>
+        <TextField fx:id="textField" onAction="#sendMsg" promptText="Введите сообщение..." HBox.hgrow="ALWAYS" />
+        <Button fx:id="btn1" onAction="#SendFile" text="Send" />
+        <Button fx:id="btn2" onAction="#SendRequest" text="Get copy" />
+        <Button fx:id="btn11" onAction="#connect" layoutX="445.0" layoutY="10.0" text="Connect" />
+    </HBox>
+</VBox>
