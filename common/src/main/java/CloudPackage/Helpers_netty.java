@@ -38,8 +38,6 @@ public class Helpers_netty {
 
         ByteOutputStream bbis = new ByteOutputStream();
 
-
-
 //        for (int i = 0; i < fileSize; i++) {
 //            byte b = in.readByte();
 //            bbis.write(b);
