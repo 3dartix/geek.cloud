@@ -1,6 +1,7 @@
 package JavaFXClient.Client;
 
 import CloudPackage.Helpers;
+import CloudPackage.Helpers_netty;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -20,9 +21,10 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class Controller {
-    Helpers helpers = new Helpers("client_repository");
+    Helpers_netty helpers = new Helpers_netty("client_repository");
     DataInputStream in;
     DataOutputStream out;
+    SocketChannel socketChannel;
 
     @FXML
     TextArea textArea;
@@ -44,7 +46,7 @@ public class Controller {
                             //String str = in.readUTF();
                             int x = in.read();
                             if(x == 0) {
-                                helpers.Write(in);
+                                //helpers.Write(in);
                             }
                             if(x == -1) {
                                 break;
@@ -70,44 +72,57 @@ public class Controller {
         }
     }
     public void connectNetty() throws Exception{
-        String host = "localhost";
-        int port = 8189;
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                String host = "localhost";
+                int port = 8189;
+                EventLoopGroup workerGroup = new NioEventLoopGroup();
 
-        try {
-            //Bootstrap похож на ServerBootstrap, но предназначен для клиентских каналов.
-            Bootstrap b = new Bootstrap();                    // (1)
-            //При указании одного объекта EventLoopGroup он будет использоваться и в качестве boss group,
-            // и как worker group. С другой стороны, boss worker не используется на клиенте.
-            b.group(workerGroup);                             // (2)
-            //Вместо NioServerSocketChannel используется клиентский NioSocketChannel.
-            b.channel(NioSocketChannel.class);                // (3)
-            b.option(ChannelOption.SO_KEEPALIVE, true);
-            b.handler(new ChannelInitializer<SocketChannel>() {
-                @Override
-                public void initChannel(SocketChannel ch) throws Exception {
-                    ch.pipeline().addLast(new ClientHandler());
+                try {
+                    //Bootstrap похож на ServerBootstrap, но предназначен для клиентских каналов.
+                    Bootstrap b = new Bootstrap();                    // (1)
+                    //При указании одного объекта EventLoopGroup он будет использоваться и в качестве boss group,
+                    // и как worker group. С другой стороны, boss worker не используется на клиенте.
+                    b.group(workerGroup);                             // (2)
+                    //Вместо NioServerSocketChannel используется клиентский NioSocketChannel.
+                    b.channel(NioSocketChannel.class);                // (3)
+                    b.option(ChannelOption.SO_KEEPALIVE, true);
+                    b.handler(new ChannelInitializer<SocketChannel>() {
+                        @Override
+                        public void initChannel(SocketChannel ch) throws Exception {
+                            ch.pipeline().addLast(new ClientHandler());
+                            socketChannel = ch;
+                        }
+                    });
+
+                    // Start the client.
+                    //Вместо метода bind() применяется connect().
+                    ChannelFuture f = b.connect(host, port).sync();   // (4)
+
+                    // Wait until the connection is closed.
+                    f.channel().closeFuture().sync();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
+                    workerGroup.shutdownGracefully();
                 }
-            });
-
-            // Start the client.
-            //Вместо метода bind() применяется connect().
-            ChannelFuture f = b.connect(host, port).sync();   // (4)
-
-            // Wait until the connection is closed.
-            f.channel().closeFuture().sync();
-        } finally {
-            workerGroup.shutdownGracefully();
-        }
+            }
+        });
+        thread.setDaemon(true);
+        thread.start();
     }
 
 
     public void SendFile(){
-        helpers.ReadAndSendFile(out, "1.txt");
+        //helpers.ReadAndSendFile(out, "1.txt");
+        System.out.printf("\nжмем на кнопку отправить на сервер файл");
+        helpers.SendRequest(socketChannel.pipeline().context(ClientHandler.class), "1.txt");
     }
 
-    public void SendRequest(){
-        helpers.SendRequest(out, "2.txt");
+    public void SendRequestForGetFile(){
+        System.out.printf("\nжмем на кнопку отправить на сервер запрос запрос");
+        helpers.SendRequest(socketChannel.pipeline().context(ClientHandler.class), "2.txt");
     }
 
 

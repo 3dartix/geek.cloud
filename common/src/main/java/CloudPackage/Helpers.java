@@ -1,6 +1,9 @@
 package CloudPackage;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.channel.ChannelHandlerContext;
+import jdk.nashorn.internal.ir.WhileNode;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -31,7 +34,9 @@ public class Helpers {
 
         try (OutputStream outputStreamToFile = new BufferedOutputStream(new FileOutputStream(path.toString()))) {
             for (long i = 0; i < fileSize; i++) {
-                outputStreamToFile.write(in.readByte());
+                byte b = in.readByte();
+                System.out.print((char)b);
+                outputStreamToFile.write(b);
             }
         }
         System.out.println(String.format("Файл %s получен и размещен: %s", fileName, path.toString()));
@@ -44,12 +49,16 @@ public class Helpers {
         long fileSize = in.readLong();
 
         Path path = Paths.get(mainCatalog + "/" + fileName);
+        System.out.printf("FileOutputStream >> " + fileSize);
 
         try (OutputStream outputStreamToFile = new BufferedOutputStream(new FileOutputStream(path.toString()))) {
             for (long i = 0; i < fileSize; i++) {
-                outputStreamToFile.write(in.readByte());
+                byte b = in.readByte();
+                System.out.print((char) b);
+                outputStreamToFile.write(b);
             }
         }
+
         System.out.println(String.format("Файл %s получен и размещен: %s", fileName, path.toString()));
     }
     public void Write(DataInputStream in) throws IOException {
@@ -107,7 +116,31 @@ public class Helpers {
     }
 
 
-    //cформировать запрос для получения файла от сервера
+    //сформирвать запрос для получения файла от сервера Netty
+    public void SendRequest(ChannelHandlerContext ctx, String path){
+        System.out.printf("\nГотовим запрос на копирование файла: " + path);
+        ByteBuf buf = null;
+        String filename = Paths.get(path).getFileName().toString();
+        //служеный фал
+        buf = ByteBufAllocator.DEFAULT.directBuffer(3);
+        buf.writeByte((byte)1);
+        ctx.writeAndFlush(buf);
+
+        buf = ByteBufAllocator.DEFAULT.directBuffer(3);
+        buf.writeInt(filename.length());
+        ctx.writeAndFlush(buf);
+
+        buf = ByteBufAllocator.DEFAULT.directBuffer(15);
+        buf.writeBytes(filename.getBytes());
+        ctx.writeAndFlush(buf);
+
+        System.out.printf("\nЗапрос отправили!");
+
+        //buf.writeLong(new File(path).length());
+        //ctx.writeAndFlush(buf);
+    }
+
+    //cформировать запрос для получения файла от сервера io
     public void SendRequest (DataOutputStream out, String filename){
         try {
             System.out.print("\nНачинаем собирать байты");
