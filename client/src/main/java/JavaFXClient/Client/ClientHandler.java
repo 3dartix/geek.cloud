@@ -18,9 +18,10 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
             while (in.isReadable()) {
                 byte b = in.readByte();
                 //весь файл без проблем выводится в консоль
-                System.out.print((char)b);
+                System.out.println(b);
                 //но когда мы пытаемся его записать происходит эксепшн
                 if(b == 0) {
+                    System.out.printf("\n========\n");
                     helpers.Write(in);
                 }
             }

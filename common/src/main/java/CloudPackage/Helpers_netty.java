@@ -1,11 +1,14 @@
 package CloudPackage;
 
+import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.ByteBufInputStream;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.DefaultFileRegion;
 import io.netty.channel.FileRegion;
+import org.apache.commons.io.IOUtils;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -23,6 +26,7 @@ public class Helpers_netty {
 
     //распарсить поток батов и записать файл на диск
     public void Write(ByteBuf in) throws IOException {
+
         int fileNameLength = in.readInt();
         byte[] fileNameBytes = new byte[fileNameLength];
         in.readBytes(fileNameBytes);
@@ -32,10 +36,17 @@ public class Helpers_netty {
         Path path = Paths.get(mainCatalog + "/" + fileName);
         System.out.printf("Название файла >> " + fileName + "\n" + "Количество байтов в файла >> " + fileSize +"\n");
 
+        ByteOutputStream bbis = new ByteOutputStream();
+
+
+
 //        for (int i = 0; i < fileSize; i++) {
 //            byte b = in.readByte();
-//            System.out.print((char)b);
+//            bbis.write(b);
+//            //System.out.print((char)b);
 //        }
+        IOUtils.write(bbis.getBytes(), new FileOutputStream(path.toString()));
+
 
         try (OutputStream outputStreamToFile = new BufferedOutputStream(new FileOutputStream(path.toString()))) {
             for (long i = 0; i < fileSize; i++) {
