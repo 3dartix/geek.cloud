@@ -9,12 +9,15 @@
     <stylesheets><URL value="@/Style.css" /></stylesheets>
 
     <MenuBar fx:id="menuBar" />
-
-    <TextArea fx:id="textArea" editable="false" VBox.vgrow="ALWAYS" />
+   <Label alignment="TOP_CENTER" text="Server files" />
+   <ListView fx:id="listViewServer" VBox.vgrow="SOMETIMES" />
+   <Separator prefWidth="200.0" />
+   <Label text="Client files" />
+   <ListView fx:id="listViewClient" VBox.vgrow="SOMETIMES" />
     <HBox>
         <TextField fx:id="textField" onAction="#sendMsg" promptText="Введите сообщение..." HBox.hgrow="ALWAYS" />
         <Button fx:id="btn1" onAction="#SendFile" text="Send" />
         <Button fx:id="btn2" onAction="#SendRequestForGetFile" text="Get copy" />
-        <Button fx:id="btn11" onAction="#connectNetty" layoutX="445.0" layoutY="10.0" text="Connect" />
+        <Button fx:id="btn11" layoutX="445.0" layoutY="10.0" onAction="#connectNetty" text="Connect" />
     </HBox>
 </VBox>

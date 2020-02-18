@@ -11,9 +11,10 @@ import io.netty.channel.FileRegion;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.Vector;
 
 public class Helpers_netty {
     private String mainCatalog;
@@ -36,16 +37,7 @@ public class Helpers_netty {
         Path path = Paths.get(mainCatalog + "/" + fileName);
         System.out.printf("Название файла >> " + fileName + "\n" + "Количество байтов в файла >> " + fileSize +"\n");
 
-        ByteOutputStream bbis = new ByteOutputStream();
-
-//        for (int i = 0; i < fileSize; i++) {
-//            byte b = in.readByte();
-//            bbis.write(b);
-//            //System.out.print((char)b);
-//        }
-        IOUtils.write(bbis.getBytes(), new FileOutputStream(path.toString()));
-
-
+        //IOUtils.write(bbis.getBytes(), new FileOutputStream(path.toString()));
         try (OutputStream outputStreamToFile = new BufferedOutputStream(new FileOutputStream(path.toString()))) {
             for (long i = 0; i < fileSize; i++) {
                 byte b = in.readByte();
@@ -58,16 +50,16 @@ public class Helpers_netty {
 
     //сформировать пачку байтов
     // [служебный файл][длина названия файла][название файла в байтах][размер файла лонг][сам файл]
-    public void Send(ChannelHandlerContext ctx, Object msg) throws IOException {
+    public void Send(ChannelHandlerContext ctx, String filename) throws IOException {
         System.out.printf("\nОтправляем файл");
-        String path = (String) msg;
-        String filename = Paths.get(path).getFileName().toString();
+        String path = mainCatalog + "/" + filename;
+        //String filename = Paths.get(path).getFileName().toString();
         //готовим регион для оправки файла целиком
         FileRegion region = new DefaultFileRegion(new FileInputStream(Paths.get(path).toFile()).getChannel(), 0, Files.size(Paths.get(path)));
         //формируем служ инофрмацию о фале
         ByteBuf buf = null;
         //Служебны байт 0 - прочитать пачку байтов и сохранить в локальную папку
-        buf = ByteBufAllocator.DEFAULT.directBuffer(5);
+        buf = ByteBufAllocator.DEFAULT.directBuffer(1);
         buf.writeByte(0);
         ctx.writeAndFlush(buf);
         //длина названия файла
@@ -85,6 +77,7 @@ public class Helpers_netty {
         //сам файл
         // -- полагаю, что при отправке поток не закрывается, а другая сторона продолжает ожидать байтов --
         ChannelFuture transferOperationFuture = ctx.writeAndFlush(region);
+        ctx.flush();
         //возможно как раз вот этот кусок кода и решает эту проблему, но я не смог разобраться откуда берется
         //вот эта штука -> Network.getInstance().stop();
         /*
@@ -131,6 +124,39 @@ public class Helpers_netty {
 
         //buf.writeLong(new File(path).length());
         //ctx.writeAndFlush(buf);
+    }
+
+    public String[] GetListFilesNames () {
+        ArrayList<String> arrList = new ArrayList<>();
+        try {
+            Files.walkFileTree(Paths.get(mainCatalog), new FileVisitor<Path>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                    //System.out.println("обход файлов" + dir.getFileName().toString());
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    //System.out.println("обход файлов" + file.getFileName().toString());
+                    arrList.add(file.getFileName().toString());
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                    return FileVisitResult.TERMINATE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return arrList.toArray(new String[0]);
     }
 
 }

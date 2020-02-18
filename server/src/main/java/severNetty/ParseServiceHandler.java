@@ -32,7 +32,7 @@ public class ParseServiceHandler extends ChannelInboundHandlerAdapter {
                 if(b == 1) {
                     String fileName = helpers.ParseRequest(in);
                     System.out.printf("\nГотовимся отправить файл");
-                    ctx.writeAndFlush(helpers.getMainCatalog() +"/"+  userName +"/"+ fileName);
+                    ctx.writeAndFlush(fileName);
                 }
             }
         } finally {

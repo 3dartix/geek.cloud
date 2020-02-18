@@ -14,7 +14,8 @@ public class BackToByteBufHandler extends ChannelOutboundHandlerAdapter {
 
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-        helpers.Send(ctx,msg);
+        String filename = (String) msg;
+        helpers.Send(ctx,filename);
     }
 
     @Override

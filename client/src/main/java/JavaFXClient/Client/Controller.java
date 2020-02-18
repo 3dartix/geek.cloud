@@ -10,7 +10,9 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 
@@ -21,15 +23,21 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class Controller {
-    Helpers_netty helpers = new Helpers_netty("client_repository");
-    DataInputStream in;
-    DataOutputStream out;
-    SocketChannel socketChannel;
+    private Helpers_netty helpers = new Helpers_netty("client_repository");
+    private DataInputStream in;
+    private DataOutputStream out;
+    private SocketChannel socketChannel;
+    private Controller controller = this;
 
     @FXML
     TextArea textArea;
     @FXML
     TextField textField;
+    @FXML
+    ListView listViewClient;
+    @FXML
+    ListView listViewServer;
+
 
     public void connect() throws Exception{
         try {
@@ -91,7 +99,7 @@ public class Controller {
                     b.handler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addLast(new ClientHandler());
+                            ch.pipeline().addLast(new ClientHandler(controller, helpers));
                             socketChannel = ch;
                         }
                     });
@@ -111,13 +119,18 @@ public class Controller {
         });
         thread.setDaemon(true);
         thread.start();
+        Thread.sleep(2000);
+        UpdateListClient();
     }
 
 
     public void SendFile(){
-        //helpers.ReadAndSendFile(out, "1.txt");
         System.out.printf("\nжмем на кнопку отправить на сервер файл");
-        helpers.SendRequest(socketChannel.pipeline().context(ClientHandler.class), "1.txt");
+        try {
+            helpers.Send(socketChannel.pipeline().context(ClientHandler.class), "1.txt");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void SendRequestForGetFile(){
@@ -130,6 +143,16 @@ public class Controller {
         //textArea.appendText(formatForDateNow.format(dateNow) + "\n" + textField.getText() + "\n");
         textField.clear();
         textField.requestFocus();
+    }
+
+    public void UpdateListClient(){
+        Platform.runLater(() -> {
+            String[] str = helpers.GetListFilesNames();
+            listViewClient.getItems().clear();
+            for (int i = 0; i < str.length; i++) {
+                listViewClient.getItems().add(str[i]);
+            }
+        });
     }
 
 

@@ -8,7 +8,13 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.ReferenceCountUtil;
 
 public class ClientHandler extends ChannelInboundHandlerAdapter {
-    private Helpers_netty helpers = new Helpers_netty("client_repository");
+    private Controller controller;
+    private Helpers_netty helpers;// = new Helpers_netty("client_repository");
+
+    public ClientHandler(Controller controller, Helpers_netty helpers) {
+        this.controller = controller;
+        this.helpers = helpers;
+    }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -16,14 +22,11 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
         try {
             //пока в этом буфере есть хоть один непрочитанный байт читаем и выводим в консоль
             while (in.isReadable()) {
-                byte b = in.readByte();
-                //весь файл без проблем выводится в консоль
-                System.out.println(b);
-                //но когда мы пытаемся его записать происходит эксепшн
+                int b = in.readByte();
                 if(b == 0) {
-                    System.out.printf("\n========\n");
                     helpers.Write(in);
                 }
+                controller.UpdateListClient();
             }
         } finally {
             ReferenceCountUtil.release(msg);
