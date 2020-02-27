@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.net.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?scenebuilder-stylesheet /css/Styles.css?>
+
+<VBox alignment="center" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="JavaFXClient.Client.ControllerRenameWindow">
+    <stylesheets><URL value="@/Style.css" /></stylesheets>
+     <TextField fx:id="textField" promptText="Введите сообщение...">
+      <VBox.margin>
+         <Insets left="20.0" right="20.0" top="10.0" />
+      </VBox.margin>
+   </TextField>
+    <HBox alignment="TOP_CENTER">
+        <Button fx:id="Rename" onAction="#Rename" text="Rename">
+         <opaqueInsets>
+            <Insets />
+         </opaqueInsets>
+         <HBox.margin>
+            <Insets right="25.0" top="20.0" />
+         </HBox.margin></Button>
+        <Button fx:id="Cancel" onAction="#Close" text="Cancel">
+         <HBox.margin>
+            <Insets bottom="10.0" left="25.0" top="20.0" />
+         </HBox.margin></Button>
+    </HBox>
+</VBox>

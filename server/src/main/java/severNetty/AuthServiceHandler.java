@@ -1,45 +1,77 @@
 package severNetty;
 
+import CloudPackage.Helpers;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelPromise;
 
 public class AuthServiceHandler extends ChannelInboundHandlerAdapter {
     private boolean authOk = false;
+    private int command;
+    private boolean isProcessing = false;
+    private Helpers helpers = new Helpers("server_repository");
+    private AuthService authService;
+
+    public AuthServiceHandler(AuthService authService) {
+        this.authService = authService;
+    }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
         if(authOk) {
             ctx.fireChannelRead(msg);
         } else {
-            //авторизация
-            authOk = true;
-            ctx.pipeline().addLast(new ParseServiceHandler("user01"));
-            ctx.fireChannelRead(msg);
-        }
+            ByteBuf buf = ((ByteBuf) msg);
 
-//        ByteBuf in = (ByteBuf) msg;
-//        try {
-//            //пока в этом буфере есть хоть один непрочитанный байт читаем и выводим в консоль
-//            while (in.isReadable()) {
-//                if(in.readByte() == 15) {
-//                    //ReadFile(in);
-//                }
-//                System.out.print((char) in.readByte());
-//            }
-//        } finally {
-//            ReferenceCountUtil.release(msg);
-//        }
+            if(!isProcessing) {
+                command = buf.readByte();
+                isProcessing = true;
+            }
+
+            //авторизация, парсим байты на логин/пароль и сравниваем с БД
+            if(command == 3){
+                String text = helpers.GetStringFromBytes(buf);
+
+                if(text != "") {
+                    String[] strings = text.split(";");
+
+                    if(authService.AuthCheck(strings[0], strings[1])){
+                        System.out.printf("\nКлиент авторизован");
+                        authOk = true;
+                        ctx.pipeline().addLast(new ServerHandler(helpers, strings[0]));
+                        //отправляем ответ клиенту, что авторизация прошла успешно
+                        helpers.SendAuthRequest(ctx, (byte)1);
+                        //задаем новый главный каталог и создаем папку для хранения файлов клиента
+                        helpers.setMainCatalog(helpers.getMainCatalog()+"/"+strings[0]);
+
+                    } else {
+                        System.out.printf("\nКлиент не авторизован");
+                        helpers.SendAuthRequest(ctx, (byte)0);
+                    }
+
+                    isProcessing = false;
+                    buf.clear();
+                    buf.release();
+                }
+            }
+        }
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        System.out.println("Клиент отвалился");
+        System.out.println("\nКлиент отвалился");
+        ctx.close();
+    }
+
+    @Override
+    public void disconnect(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
+        ctx.close();
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        cause.printStackTrace();
+        //cause.printStackTrace();
         ctx.close();
     }
 }

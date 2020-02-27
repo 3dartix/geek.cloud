@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.net.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?scenebuilder-stylesheet /css/Styles.css?>
+
+<VBox alignment="center" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="JavaFXClient.Client.ControllerProgressWindow">
+    <stylesheets><URL value="@/Style.css" /></stylesheets>
+   <Label text="Прогресс" fx:id="label">
+      <opaqueInsets>
+         <Insets />
+      </opaqueInsets>
+      <VBox.margin>
+         <Insets top="10.0" />
+      </VBox.margin>
+   </Label>
+   <ProgressBar fx:id="progressBar" prefWidth="200.0" progress="0.0">
+      <VBox.margin>
+         <Insets bottom="10.0" left="10.0" right="10.0" top="20.0" />
+      </VBox.margin></ProgressBar>
+    <HBox alignment="TOP_CENTER" />
+</VBox>

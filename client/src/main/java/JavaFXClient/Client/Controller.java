@@ -1,7 +1,6 @@
 package JavaFXClient.Client;
 
 import CloudPackage.Helpers;
-import CloudPackage.Helpers_netty;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -12,33 +11,60 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.Socket;
 
 public class Controller {
-    private Helpers_netty helpers = new Helpers_netty("client_repository");
-    private DataInputStream in;
-    private DataOutputStream out;
+    private Helpers helpers = new Helpers("client_repository");
+    //private DataInputStream in;
+    //private DataOutputStream out;
     private SocketChannel socketChannel;
     private Controller controller = this;
+    private int toggle;
+    private boolean isAuthorized = false;
+
+    private String selectedFileFromServer;
+    private String selectedFileFromClient;
+
+    public boolean isAuthorized() {
+        return isAuthorized;
+    }
+
+    public Helpers getHelpers() {
+        return helpers;
+    }
 
     @FXML
-    TextArea textArea;
+    HBox authPanel;
     @FXML
-    TextField textField;
+    TextField loginField;
+    @FXML
+    TextField passField;
+    @FXML
+    VBox mainUIbox;
     @FXML
     ListView listViewClient;
     @FXML
     ListView listViewServer;
 
-
+    public Controller() {
+        try {
+            connectNetty();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+/*
     public void connect() throws Exception{
         try {
             Socket socket = new Socket("localhost", 8189);
@@ -79,6 +105,7 @@ public class Controller {
             e.printStackTrace();
         }
     }
+*/
     public void connectNetty() throws Exception{
         Thread thread = new Thread(new Runnable() {
             @Override
@@ -101,6 +128,8 @@ public class Controller {
                         public void initChannel(SocketChannel ch) throws Exception {
                             ch.pipeline().addLast(new ClientHandler(controller, helpers));
                             socketChannel = ch;
+                            setAuthrized(false);
+                            //SendRequestForFilesList();
                         }
                     });
 
@@ -119,30 +148,46 @@ public class Controller {
         });
         thread.setDaemon(true);
         thread.start();
-        Thread.sleep(2000);
+        //Thread.sleep(5000);
         UpdateListClient();
     }
 
-
-    public void SendFile(){
-        System.out.printf("\nжмем на кнопку отправить на сервер файл");
-        try {
-            helpers.Send(socketChannel.pipeline().context(ClientHandler.class), "1.txt");
-        } catch (IOException e) {
-            e.printStackTrace();
+    public void SignIn(){
+        if(loginField.getText().length() != 0 && passField.getText().length() != 0) {
+            //System.out.print(loginField.getText().length());
+            helpers.SendBytesForRename(socketChannel.pipeline().context(ClientHandler.class), loginField.getText(), passField.getText());
         }
     }
 
-    public void SendRequestForGetFile(){
-        System.out.printf("\nжмем на кнопку отправить на сервер запрос запрос");
-        helpers.SendRequest(socketChannel.pipeline().context(ClientHandler.class), "2.txt");
+    public void SendFile(MouseEvent event){
+        if (selectedFileFromClient != "") {
+            helpers.SendBytesFromFile(socketChannel.pipeline().context(ClientHandler.class), selectedFileFromClient);
+            OpenModalWindowProgress(event);
+        }
     }
 
+    public void GetFile(MouseEvent event){
+        System.out.printf("\nжмем на кнопку отправить на сервер запрос запрос");
+        if(selectedFileFromServer != "") {
+            OpenModalWindowProgress(event);
+            helpers.GetFileFromServerRequest(socketChannel.pipeline().context(ClientHandler.class), selectedFileFromServer);
+        }
+    }
 
-    public void sendMsg() {
-        //textArea.appendText(formatForDateNow.format(dateNow) + "\n" + textField.getText() + "\n");
-        textField.clear();
-        textField.requestFocus();
+    public void Delete(){
+        switch (toggle) {
+            case 0: // на сервере
+                helpers.DeleteFileFromServerRequest(socketChannel.pipeline().context(ClientHandler.class), selectedFileFromServer);
+                break;
+            case 1: // на клиенте
+                helpers.DeleteFile(selectedFileFromClient);
+                UpdateListClient();
+                break;
+        }
+    }
+
+    public void SendRequestForFilesList(){
+        helpers.FilesListRequestFromServer(socketChannel.pipeline().context(ClientHandler.class));
     }
 
     public void UpdateListClient(){
@@ -156,5 +201,109 @@ public class Controller {
     }
 
 
+    //переименование файлов на сервере и клиенте
+    public void ToggleToServer (MouseEvent mouseEvent) {
+        toggle = 0;
+        OpenModalWindowRename(mouseEvent);
+    }
+    public void ToggleToClient (MouseEvent mouseEvent) {
+        toggle = 1;
+        OpenModalWindowRename(mouseEvent);
+    }
+    private void OpenModalWindowRename(MouseEvent mouseEvent) {
+        if(mouseEvent.getClickCount() == 2) {
+          //  Platform.runLater(() -> {
+                Stage stage = new Stage();
+                Parent root = null;
+                try {
+                    //root = FXMLLoader.load(getClass().getClassLoader().getResource("RenameModalWindow.fxml"));
+                    FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("RenameModalWindow.fxml"));
+                    root = loader.load();
+                    ControllerRenameWindow controllerRenameWindow = loader.getController();
+                    controllerRenameWindow.setMainController(controller);
+                    //убрать костыль
+                    if(toggle == 0)
+                        controllerRenameWindow.setTextToTextField(listViewServer.getSelectionModel().getSelectedItem().toString());
+                    else
+                        controllerRenameWindow.setTextToTextField(listViewClient.getSelectionModel().getSelectedItem().toString());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                stage.setTitle("Renaming file");
+                stage.setScene(new Scene(root, 250, 100));
+                stage.initModality(Modality.WINDOW_MODAL);
+                stage.initOwner(
+                        ((Node) mouseEvent.getSource()).getScene().getWindow());
+
+                stage.show();
+           // });
+        } else {
+            // отраатываем одинарные клики
+            switch (toggle) {
+                case 0: // на сервере
+                    if(listViewServer.getSelectionModel().getSelectedItem() != null) {
+                        selectedFileFromServer = listViewServer.getSelectionModel().getSelectedItem().toString();
+                        selectedFileFromClient = "";
+                    }
+                    break;
+                case 1: // на клиенте
+                    if(listViewClient.getSelectionModel().getSelectedItem() != null) {
+                        selectedFileFromClient = listViewClient.getSelectionModel().getSelectedItem().toString();
+                        selectedFileFromServer = "";
+                    }
+                    break;
+            }
+        }
+    }
+    public void RenameFle (String oldName, String curr){
+        //отправляем
+        switch (toggle) {
+            case 0: // на сервере
+                helpers.SendBytesForRename(socketChannel.pipeline().context(ClientHandler.class), oldName,curr);
+                break;
+            case 1: // на клиенте
+                helpers.RenameFile(oldName, curr);
+                UpdateListClient();
+                break;
+        }
+    }
+
+    public void setAuthrized(boolean isAuthorized) {
+        if (!isAuthorized) {
+            this.isAuthorized = false;
+            authPanel.setVisible(true);
+            authPanel.setManaged(true);
+            mainUIbox.setDisable(true);
+            loginField.setText("");
+            passField.setText("");
+        } else {
+            this.isAuthorized = true;
+            authPanel.setVisible(false);
+            authPanel.setManaged(false);
+            mainUIbox.setDisable(false);
+        }
+    }
+
+    public void OpenModalWindowProgress(MouseEvent mouseEvent){
+        Stage stage = new Stage();
+        Parent root = null;
+        try {
+            //root = FXMLLoader.load(getClass().getClassLoader().getResource("RenameModalWindow.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("ProgressModalWindow.fxml"));
+            root = loader.load();
+            ControllerProgressWindow controllerProgressWindow = loader.getController();
+            controllerProgressWindow.setMainController(controller, stage);
+            controllerProgressWindow.progressUpdate();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        stage.setTitle("Processing");
+        stage.setScene(new Scene(root, 250, 100));
+        stage.initModality(Modality.WINDOW_MODAL);
+        stage.initOwner(
+                ((Node) mouseEvent.getSource()).getScene().getWindow());
+
+        stage.show();
+    }
 
 }

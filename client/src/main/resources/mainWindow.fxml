@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.net.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?scenebuilder-stylesheet /css/Styles.css?>
+
+<VBox alignment="center" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="JavaFXClient.Client.Controller">
+    <stylesheets><URL value="@/Style.css" /></stylesheets>
+   <HBox fx:id="authPanel">
+      <children>
+         <Label text="login">
+            <HBox.margin>
+               <Insets />
+            </HBox.margin>
+            <opaqueInsets>
+               <Insets />
+            </opaqueInsets>
+            <padding>
+               <Insets bottom="13.0" left="5.0" right="5.0" top="13.0" />
+            </padding>
+         </Label>
+         <TextField fx:id="loginField" prefWidth="110.0">
+            <HBox.margin>
+               <Insets bottom="10.0" top="10.0" />
+            </HBox.margin>
+         </TextField>
+         <Label text="Pass">
+            <padding>
+               <Insets bottom="13.0" left="5.0" right="5.0" top="13.0" />
+            </padding>
+         </Label>
+         <TextField fx:id="passField" prefHeight="25.0" prefWidth="110.0">
+            <HBox.margin>
+               <Insets bottom="10.0" top="10.0" />
+            </HBox.margin>
+         </TextField>
+         <Button fx:id="btnConnect" minWidth="-Infinity" mnemonicParsing="false" onAction="#SignIn" text="Connect">
+            <HBox.margin>
+               <Insets bottom="10.0" left="20.0" right="20.0" top="10.0" />
+            </HBox.margin>
+         </Button>
+      </children>
+   </HBox>
+   <VBox fx:id="mainUIbox">
+      <children>
+      
+          <MenuBar fx:id="menuBar" />
+         <Label alignment="TOP_CENTER" text="Server files">
+            <VBox.margin>
+               <Insets bottom="5.0" left="5.0" top="5.0" />
+            </VBox.margin></Label>
+         <ListView fx:id="listViewServer" onMouseClicked="#ToggleToServer" VBox.vgrow="SOMETIMES" />
+          <HBox fx:id="HBoxWithBnt">
+              <Button fx:id="GET_FROM_SERVER" onMouseClicked="#GetFile" prefHeight="30.0" prefWidth="30.0">
+               <padding>
+                  <Insets right="10.0" />
+               </padding>
+               <HBox.margin>
+                  <Insets right="1.0" />
+               </HBox.margin></Button>
+              <Button fx:id="SEND_TO_SERVER" onMouseClicked="#SendFile" prefHeight="30.0" prefWidth="30.0">
+               <HBox.margin>
+                  <Insets right="1.0" />
+               </HBox.margin></Button>
+              <Button fx:id="DELETE" onAction="#Delete" prefHeight="30.0" prefWidth="30.0">
+               <HBox.margin>
+                  <Insets right="1.0" />
+               </HBox.margin></Button>
+          </HBox>
+         <Separator prefWidth="200.0" />
+         <Label text="Client files">
+            <VBox.margin>
+               <Insets bottom="5.0" left="5.0" top="5.0" />
+            </VBox.margin></Label>
+         <ListView fx:id="listViewClient" onMouseClicked="#ToggleToClient" VBox.vgrow="SOMETIMES" />
+      </children>
+   </VBox>
+</VBox>
