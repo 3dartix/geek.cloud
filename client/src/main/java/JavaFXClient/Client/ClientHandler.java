@@ -26,52 +26,53 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         ByteBuf buf = ((ByteBuf) msg);
-        //проверка авторизован ли ползователь
-        if(!controller.isAuthorized()) {
-            if(buf.readByte() == 1){
-                controller.setAuthrized(true);
-                controller.SendRequestForFilesList();
-            } else {
-                controller.setAuthrized(false);
+        try {
+            //проверка авторизован ли ползователь
+            if(!controller.isAuthorized()) {
+                if(buf.readByte() == 1){
+                    controller.setAuthrized(true);
+                    controller.SendRequestForFilesList();
+                } else {
+                    controller.setAuthrized(false);
+                }
+                return;
             }
-            return;
-        }
 
-        if(!isProcessing) {
-            command = buf.readByte();
-            isProcessing = true;
-        }
-
-        //получаем файл
-        if(command == 0) {
-            if(helpers.Write(buf)){
-                isProcessing = false;
-                buf.release();
-                controller.UpdateListClient();
+            if(!isProcessing) {
+                command = buf.readByte();
+                isProcessing = true;
             }
-        }
-        //получаем список файлов хранящихся на сервере
-        if(command == 2) {
-            String fileName = helpers.GetStringFromBytes(buf);
-            System.out.printf("\nОтправляем список на сервер");
-            if(fileName != ""){
-                isProcessing = false;
-                buf.clear();
-                ((ByteBuf) msg).release();
 
-                //обновляем список файлов на клиенте
-                String[] strings = fileName.split(";");
-
-                Platform.runLater(() -> {
-                    controller.listViewServer.getItems().clear();
-                    for (int i = 0; i < strings.length; i++) {
-                        //System.out.printf("\n файл: " + strings[i]);
-                        controller.listViewServer.getItems().add(strings[i]);
-                    }
-                });
-
+            //получаем файл
+            if(command == 0) {
+                if(helpers.Write(buf)){
+                    isProcessing = false;
+                    controller.UpdateListClient();
+                }
             }
+
+            //получаем список файлов хранящихся на сервере
+            if(command == 2) {
+                String fileName = helpers.GetStringFromBytes(buf);
+                System.out.printf("\nОтправляем список на сервер");
+                if(fileName != ""){
+                    isProcessing = false;
+                    //обновляем список файлов на клиенте
+                    String[] strings = fileName.split(";");
+
+                    Platform.runLater(() -> {
+                        controller.listViewServer.getItems().clear();
+                        for (int i = 0; i < strings.length; i++) {
+                            controller.listViewServer.getItems().add(strings[i]);
+                        }
+                    });
+                }
+            }
+        } finally {
+            buf.release();
         }
+
+
     }
 
     @Override

@@ -24,63 +24,60 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         ByteBuf buf = (ByteBuf) msg;
+        try {
 
-        if(!isProcessing) {
-            command = buf.readByte();
-            isProcessing = true;
-        }
+            if (!isProcessing) {
+                command = buf.readByte();
+                isProcessing = true;
+            }
 
-        //получаем файл и сохраняем его в папке сервера
-        if(command == 0) {
-            if(helpers.Write(buf)){
-                isProcessing = false;
-                buf.release();
-                //отправляем обновленный список файлов клиенту
+            //получаем файл и сохраняем его в папке сервера
+            if (command == 0) {
+                if (helpers.Write(buf)) {
+                    isProcessing = false;
+                    //отправляем обновленный список файлов клиенту
+                    helpers.SendListFilesToClient(ctx);
+                }
+            }
+
+            // отправляем запрашиваемый файл клиенту
+            if (command == 1) {
+                String fileName = helpers.GetStringFromBytes(buf);
+                if (fileName != "") {
+                    helpers.SendBytesFromFile(ctx, fileName);
+                    isProcessing = false;
+                }
+            }
+
+            //формируем пачку байтов из списка файлов на сервере и отправляем клиенту
+            if (command == 2) {
                 helpers.SendListFilesToClient(ctx);
-            }
-        }
-
-        // отправляем запрашиваемый файл клиенту
-        if(command == 1) {
-            String fileName = helpers.GetStringFromBytes(buf);
-            if(fileName != ""){
-                //ctx.writeAndFlush(fileName);
-                helpers.SendBytesFromFile(ctx, fileName);
                 isProcessing = false;
-                buf.clear();
-                ((ByteBuf) msg).release();
             }
-        }
 
-        //формируем пачку байтов из списка файлов на сервере и отправляем клиенту
-        if(command == 2) {
-            helpers.SendListFilesToClient(ctx);
-            isProcessing = false;
+            //переименовываем файл в папке на сервере
+            if (command == 3) {
+                String filesFormClient = helpers.GetStringFromBytes(buf);
+                if (filesFormClient != "") {
+                    System.out.printf("\nСтрока с файлами ::" + filesFormClient);
+                    String[] strings = filesFormClient.split(";");
+                    helpers.RenameFile(strings[0], strings[1]);
+                    helpers.SendListFilesToClient(ctx);
+                    isProcessing = false;
+                }
+            }
+
+            //удаляем файл на сервере
+            if (command == 4) {
+                String filesFormClient = helpers.GetStringFromBytes(buf);
+                if (filesFormClient != "") {
+                    helpers.DeleteFile(filesFormClient);
+                    helpers.SendListFilesToClient(ctx);
+                    isProcessing = false;
+                }
+            }
+        } finally {
             buf.release();
-        }
-
-        //переименовываем файл в папке на сервере
-        if(command == 3){
-            String filesFormClient = helpers.GetStringFromBytes(buf);
-            if(filesFormClient != "") {
-                System.out.printf("\nСтрока с файлами ::" + filesFormClient);
-                String[] strings = filesFormClient.split(";");
-                helpers.RenameFile(strings[0], strings[1]);
-                helpers.SendListFilesToClient(ctx);
-                isProcessing = false;
-                buf.release();
-            }
-        }
-
-        //удаляем файл на сервере
-        if(command == 4){
-            String filesFormClient = helpers.GetStringFromBytes(buf);
-            if(filesFormClient != "") {
-                helpers.DeleteFile(filesFormClient);
-                helpers.SendListFilesToClient(ctx);
-                isProcessing = false;
-                buf.release();
-            }
         }
     }
 

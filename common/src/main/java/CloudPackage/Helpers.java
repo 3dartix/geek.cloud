@@ -121,7 +121,6 @@ public class Helpers {
                 receivedFileLength++;
                 // считаем прогресс
                 ProgressStatus(fileLength, receivedFileLength);
-
                 if (fileLength == receivedFileLength) {
                     currentState = State.NAME_LENGTH;
                     receivedFileLength = 0;
