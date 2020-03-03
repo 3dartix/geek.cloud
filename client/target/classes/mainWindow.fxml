@@ -6,7 +6,7 @@
 <?import javafx.scene.layout.*?>
 <?scenebuilder-stylesheet /css/Styles.css?>
 
-<VBox alignment="center" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="JavaFXClient.Client.Controller">
+<VBox alignment="center" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.artem.clientNetty.Controller">
     <stylesheets><URL value="@/Style.css" /></stylesheets>
    <HBox fx:id="authPanel">
       <children>
@@ -36,7 +36,7 @@
                <Insets bottom="10.0" top="10.0" />
             </HBox.margin>
          </TextField>
-         <Button fx:id="btnConnect" minWidth="-Infinity" mnemonicParsing="false" onAction="#SignIn" text="Connect">
+         <Button fx:id="btnConnect" minWidth="-Infinity" mnemonicParsing="false" onAction="#signIn" text="Connect">
             <HBox.margin>
                <Insets bottom="10.0" left="20.0" right="20.0" top="10.0" />
             </HBox.margin>
@@ -51,20 +51,20 @@
             <VBox.margin>
                <Insets bottom="5.0" left="5.0" top="5.0" />
             </VBox.margin></Label>
-         <ListView fx:id="listViewServer" onMouseClicked="#ToggleToServer" VBox.vgrow="SOMETIMES" />
+         <ListView fx:id="listViewServer" onMouseClicked="#toggleToServer" VBox.vgrow="SOMETIMES" />
           <HBox fx:id="HBoxWithBnt">
-              <Button fx:id="GET_FROM_SERVER" onMouseClicked="#GetFile" prefHeight="30.0" prefWidth="30.0">
+              <Button fx:id="GET_FROM_SERVER" onMouseClicked="#getFile" prefHeight="30.0" prefWidth="30.0">
                <padding>
                   <Insets right="10.0" />
                </padding>
                <HBox.margin>
                   <Insets right="1.0" />
                </HBox.margin></Button>
-              <Button fx:id="SEND_TO_SERVER" onMouseClicked="#SendFile" prefHeight="30.0" prefWidth="30.0">
+              <Button fx:id="SEND_TO_SERVER" onMouseClicked="#sendFile" prefHeight="30.0" prefWidth="30.0">
                <HBox.margin>
                   <Insets right="1.0" />
                </HBox.margin></Button>
-              <Button fx:id="DELETE" onAction="#Delete" prefHeight="30.0" prefWidth="30.0">
+              <Button fx:id="DELETE" onAction="#delete" prefHeight="30.0" prefWidth="30.0">
                <HBox.margin>
                   <Insets right="1.0" />
                </HBox.margin></Button>
@@ -74,7 +74,7 @@
             <VBox.margin>
                <Insets bottom="5.0" left="5.0" top="5.0" />
             </VBox.margin></Label>
-         <ListView fx:id="listViewClient" onMouseClicked="#ToggleToClient" VBox.vgrow="SOMETIMES" />
+         <ListView fx:id="listViewClient" onMouseClicked="#toggleToClient" VBox.vgrow="SOMETIMES" />
       </children>
    </VBox>
 </VBox>

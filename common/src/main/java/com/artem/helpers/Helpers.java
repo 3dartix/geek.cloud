@@ -1,23 +1,21 @@
-package CloudPackage;
+package com.artem.helpers;
 
-import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.ByteBufInputStream;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.DefaultFileRegion;
 import io.netty.channel.FileRegion;
-import org.apache.commons.io.IOUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.Vector;
 
 public class Helpers {
+
+
     public enum State {
         NAME_LENGTH, NAME, FILE_LENGTH, FILE
     }
@@ -30,13 +28,24 @@ public class Helpers {
     private long fileLength;
     private int progress; //прогресс передачи в процентах 0 - 100%
 
-    public Helpers (String mainCatalog) {
+    private ICallback progressCallback;
+    private ICallback closeModalWindow;
+
+    public void registerUpdateProgressCallBack(ICallback progressICallback){
+        this.progressCallback = progressICallback;
+    }
+    public void registerCloseModalWindowCallBack(ICallback closeModalWindow){
+        this.closeModalWindow = closeModalWindow;
+    }
+
+
+    public Helpers(String mainCatalog) {
         this.mainCatalog = mainCatalog;
     }
 
     public void setMainCatalog(String mainCatalog) {
         this.mainCatalog = mainCatalog;
-        CreateFolder();
+        createFolder();
     }
 
     public String getMainCatalog() {
@@ -47,37 +56,40 @@ public class Helpers {
     public int getProgress() {
         return progress;
     }
-    public boolean isProgressFinish(){
-        if(progress == 100){
-            return true;
-        } else {
-            return false;
-        }
-    }
-    //обнуляем прогресс по завершению
-    public void ProgressReset(){
-        progress = 0;
-    }
     //считаем прогресс, когда получаем файл от сервера
-    public void ProgressStatus(long totalSize, long transfered){
+    public void progressStatus(long totalSize, long transfered){
         progress = (int) (transfered * 100 / totalSize);
     }
+    public void progressReset(){
+        progress = 0;
+    }
+
     //считаем прогресс, когда отправляем файл на сервер
-    public void ProgressStatus(FileRegion file){
+    public void progressStatus(FileRegion file){
+
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 while (file.count() != file.transfered()) {
-                    progress = (int) (file.transfered() * 100 / file.count());
+                    if (progressCallback != null) {
+                        progress = (int) (file.transfered() * 100 / file.count());
+                        progressCallback.progressCallback();
+                    }
                     try {
-                        Thread.sleep(50);
+                        Thread.sleep(100);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    //System.out.print("\nProgress: " + progress + "%");
                 }
-                progress = 100;
+
+                if(closeModalWindow != null) {
+                    closeModalWindow.closeModalWindow();
+                    progressReset();
+                }
             }
+
+
+
         });
         thread.setDaemon(true);
         thread.start();
@@ -85,7 +97,7 @@ public class Helpers {
     // <-- методы для прогресса
 
     //распарсить поток батов и записать файл на диск в нужный каталог
-    public boolean Write (ByteBuf buf) throws IOException {
+    public boolean write(ByteBuf buf) throws IOException {
         boolean complete = false;
         if (currentState == State.NAME_LENGTH) {
             if (buf.readableBytes() >= 4) {
@@ -119,15 +131,27 @@ public class Helpers {
             while (buf.readableBytes() > 0) {
                 out.write(buf.readByte());
                 receivedFileLength++;
-                // считаем прогресс
-                ProgressStatus(fileLength, receivedFileLength);
+
+                // считаем прогресс и обновляем статус
+                progressStatus(fileLength, receivedFileLength);
+                if (progressCallback != null && (receivedFileLength % 1000) == 0) {
+                    progressCallback.progressCallback();
+                    //System.out.printf("\n !!!!!!!!!!! " + receivedFileLength);
+                }
+
+
                 if (fileLength == receivedFileLength) {
                     currentState = State.NAME_LENGTH;
                     receivedFileLength = 0;
                     System.out.println("\nFile received");
                     out.close();
                     complete = true;
-                    progress = 100;
+
+                    if(closeModalWindow != null) {
+                        closeModalWindow.closeModalWindow();
+                        progressReset();
+                    }
+                    break;
                 }
             }
         }
@@ -135,7 +159,7 @@ public class Helpers {
     }
     //сформировать пачку байтов
     // [служебный файл][длина названия файла][название файла в байтах][размер файла лонг][сам файл]
-    public void SendBytesFromFile (ChannelHandlerContext ctx, String filename) {
+    public void sendBytesFromFile(ChannelHandlerContext ctx, String filename) {
         try {
             System.out.printf("\nОтправляем файл");
             String path = mainCatalog + "/" + filename;
@@ -152,7 +176,7 @@ public class Helpers {
             buf.writeByte(0);
             ctx.writeAndFlush(buf);
             //длина названия файла
-            buf = ByteBufAllocator.DEFAULT.directBuffer(3);
+            buf = ByteBufAllocator.DEFAULT.directBuffer(5);
             buf.writeInt(filename.getBytes().length);
             ctx.writeAndFlush(buf);
             //название файла в байтах
@@ -160,13 +184,13 @@ public class Helpers {
             buf.writeBytes(filename.getBytes());
             ctx.writeAndFlush(buf);
             //размер файла лонг
-            buf = ByteBufAllocator.DEFAULT.directBuffer(50);
+            buf = ByteBufAllocator.DEFAULT.directBuffer(9);
             long l = new File(path).length();
             buf.writeLong(l);
             System.out.printf("\nРазмер фала: " + l);
             ctx.writeAndFlush(buf);
 
-            ProgressStatus(region);
+            progressStatus(region);
             ChannelFuture transferOperationFuture = ctx.writeAndFlush(region);
 
         } catch (IOException e) {
@@ -174,7 +198,7 @@ public class Helpers {
         }
     }
     //формируем пачку байтов (списко файлов на сервере) и отправляем клиенту
-    public void SendListFilesToClient(ChannelHandlerContext ctx) throws IOException {
+    public void sendListFilesToClient(ChannelHandlerContext ctx) throws IOException {
         System.out.printf("\nОтправляем список файлов клиенту");
         ByteBuf buf = null;
 
@@ -183,7 +207,7 @@ public class Helpers {
         ctx.writeAndFlush(buf);
 
         String filesName = "";
-        String[] strings = GetListFilesNames();
+        String[] strings = getListFilesNames();
         for (int i = 0; i < strings.length; i++) {
             filesName += strings[i] + ";";
         }
@@ -199,7 +223,7 @@ public class Helpers {
         ctx.writeAndFlush(buf);
     }
     //формируем пачку байтов (переименование) и отправляем на сервер
-    public void SendBytesForRename (ChannelHandlerContext ctx, String oldName, String newName){
+    public void sendBytesForRename(ChannelHandlerContext ctx, String oldName, String newName){
         System.out.printf("\nОтправляем список файлов клиенту");
         ByteBuf buf = null;
 
@@ -219,7 +243,7 @@ public class Helpers {
     }
 
     //распарсить запрос (байты) и получить из него string
-    public String GetStringFromBytes(ByteBuf in){
+    public String getStringFromBytes(ByteBuf in){
         String str = "";
         if (currentState == State.NAME_LENGTH) {
             if (in.readableBytes() >= 4) {
@@ -243,7 +267,7 @@ public class Helpers {
     }
 
     //сформирвать запрос для получения файла от сервера Netty
-    public void GetFileFromServerRequest(ChannelHandlerContext ctx, String path){
+    public void getFileFromServerRequest(ChannelHandlerContext ctx, String path){
         System.out.printf("\nГотовим запрос на копирование файла: " + path);
         ByteBuf buf = null;
         String filename = Paths.get(path).getFileName().toString();
@@ -264,7 +288,7 @@ public class Helpers {
     }
 
     //сформирвать запрос для удаления файла на сервере
-    public void DeleteFileFromServerRequest (ChannelHandlerContext ctx, String path){
+    public void deleteFileFromServerRequest(ChannelHandlerContext ctx, String path){
         System.out.printf("\nГотовим запрос на удаление фала: " + path);
         ByteBuf buf = null;
         String filename = Paths.get(path).getFileName().toString();
@@ -285,7 +309,7 @@ public class Helpers {
     }
 
     //сформировать запрос для получения списка файлов от сервера Netty
-    public void FilesListRequestFromServer (ChannelHandlerContext ctx){
+    public void filesListRequestFromServer(ChannelHandlerContext ctx){
         System.out.printf("\nГотовим запрос на получение списка файлов: ");
         ByteBuf buf = null;
         //служеный файл
@@ -295,7 +319,7 @@ public class Helpers {
         System.out.printf("\nЗапрос отправлен!");
     }
 
-    public void RenameFile(String old, String cur){
+    public void renameFile(String old, String cur){
         if(old == cur || cur == "") {
             System.out.printf("Ошибка");
             return;
@@ -312,7 +336,7 @@ public class Helpers {
             System.out.println("Файл не найден");
         }
     }
-    public void DeleteFile(String name){
+    public void deleteFile(String name){
         File file = new File(mainCatalog + "/" + name);
         if(Files.exists(file.toPath())){
             file.delete();
@@ -320,7 +344,7 @@ public class Helpers {
     }
 
     // получаем список файлов из главного каталога
-    public String[] GetListFilesNames() {
+    public String[] getListFilesNames() {
         ArrayList<String> arrList = new ArrayList<>();
         try {
             Files.walkFileTree(Paths.get(mainCatalog), new FileVisitor<Path>() {
@@ -353,7 +377,7 @@ public class Helpers {
         return arrList.toArray(new String[0]);
     }
     // Отправляем ответ клиенту пройдена\не пройдена авторизация
-    public void SendAuthRequest(ChannelHandlerContext ctx, byte b){
+    public void sendAuthRequest(ChannelHandlerContext ctx, byte b){
         // если 0 авторизация не прошла, 1 авторизация успешна
         ByteBuf buf = null;
         //служеный файл
@@ -362,7 +386,7 @@ public class Helpers {
         ctx.writeAndFlush(buf);
     }
 
-    private void CreateFolder(){
+    private void createFolder(){
         //проверяем существует ли каталог
         Path path = Paths.get(mainCatalog);
         try {

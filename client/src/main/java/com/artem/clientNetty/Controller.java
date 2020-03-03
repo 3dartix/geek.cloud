@@ -1,6 +1,6 @@
-package JavaFXClient.Client;
+package com.artem.clientNetty;
 
-import CloudPackage.Helpers;
+import com.artem.helpers.Helpers;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -26,13 +26,10 @@ import java.io.IOException;
 
 public class Controller {
     private Helpers helpers = new Helpers("client_repository");
-    //private DataInputStream in;
-    //private DataOutputStream out;
     private SocketChannel socketChannel;
     private Controller controller = this;
     private int toggle;
     private boolean isAuthorized = false;
-
     private String selectedFileFromServer;
     private String selectedFileFromClient;
 
@@ -149,50 +146,49 @@ public class Controller {
         thread.setDaemon(true);
         thread.start();
         //Thread.sleep(5000);
-        UpdateListClient();
+        updateListClient();
     }
 
-    public void SignIn(){
+    public void signIn(){
         if(loginField.getText().length() != 0 && passField.getText().length() != 0) {
-            //System.out.print(loginField.getText().length());
-            helpers.SendBytesForRename(socketChannel.pipeline().context(ClientHandler.class), loginField.getText(), passField.getText());
+            helpers.sendBytesForRename(socketChannel.pipeline().context(ClientHandler.class), loginField.getText(), passField.getText());
         }
     }
 
-    public void SendFile(MouseEvent event){
+    public void sendFile(MouseEvent event){
         if (selectedFileFromClient != "") {
-            helpers.SendBytesFromFile(socketChannel.pipeline().context(ClientHandler.class), selectedFileFromClient);
-            OpenModalWindowProgress(event);
+            openModalWindowProgress(event);
+            helpers.sendBytesFromFile(socketChannel.pipeline().context(ClientHandler.class), selectedFileFromClient);
         }
     }
 
-    public void GetFile(MouseEvent event){
+    public void getFile(MouseEvent event){
         System.out.printf("\nжмем на кнопку отправить на сервер запрос запрос");
         if(selectedFileFromServer != "") {
-            OpenModalWindowProgress(event);
-            helpers.GetFileFromServerRequest(socketChannel.pipeline().context(ClientHandler.class), selectedFileFromServer);
+            openModalWindowProgress(event);
+            helpers.getFileFromServerRequest(socketChannel.pipeline().context(ClientHandler.class), selectedFileFromServer);
         }
     }
 
-    public void Delete(){
+    public void delete(){
         switch (toggle) {
             case 0: // на сервере
-                helpers.DeleteFileFromServerRequest(socketChannel.pipeline().context(ClientHandler.class), selectedFileFromServer);
+                helpers.deleteFileFromServerRequest(socketChannel.pipeline().context(ClientHandler.class), selectedFileFromServer);
                 break;
             case 1: // на клиенте
-                helpers.DeleteFile(selectedFileFromClient);
-                UpdateListClient();
+                helpers.deleteFile(selectedFileFromClient);
+                updateListClient();
                 break;
         }
     }
 
-    public void SendRequestForFilesList(){
-        helpers.FilesListRequestFromServer(socketChannel.pipeline().context(ClientHandler.class));
+    public void sendRequestForFilesList(){
+        helpers.filesListRequestFromServer(socketChannel.pipeline().context(ClientHandler.class));
     }
 
-    public void UpdateListClient(){
+    public void updateListClient(){
         Platform.runLater(() -> {
-            String[] str = helpers.GetListFilesNames();
+            String[] str = helpers.getListFilesNames();
             listViewClient.getItems().clear();
             for (int i = 0; i < str.length; i++) {
                 listViewClient.getItems().add(str[i]);
@@ -202,41 +198,39 @@ public class Controller {
 
 
     //переименование файлов на сервере и клиенте
-    public void ToggleToServer (MouseEvent mouseEvent) {
+    public void toggleToServer(MouseEvent mouseEvent) {
         toggle = 0;
-        OpenModalWindowRename(mouseEvent);
+        openModalWindowRename(mouseEvent);
     }
-    public void ToggleToClient (MouseEvent mouseEvent) {
+    public void toggleToClient(MouseEvent mouseEvent) {
         toggle = 1;
-        OpenModalWindowRename(mouseEvent);
+        openModalWindowRename(mouseEvent);
     }
-    private void OpenModalWindowRename(MouseEvent mouseEvent) {
+    private void openModalWindowRename(MouseEvent mouseEvent) {
         if(mouseEvent.getClickCount() == 2) {
-          //  Platform.runLater(() -> {
-                Stage stage = new Stage();
-                Parent root = null;
-                try {
-                    //root = FXMLLoader.load(getClass().getClassLoader().getResource("RenameModalWindow.fxml"));
-                    FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("RenameModalWindow.fxml"));
-                    root = loader.load();
-                    ControllerRenameWindow controllerRenameWindow = loader.getController();
-                    controllerRenameWindow.setMainController(controller);
-                    //убрать костыль
-                    if(toggle == 0)
-                        controllerRenameWindow.setTextToTextField(listViewServer.getSelectionModel().getSelectedItem().toString());
-                    else
-                        controllerRenameWindow.setTextToTextField(listViewClient.getSelectionModel().getSelectedItem().toString());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                stage.setTitle("Renaming file");
-                stage.setScene(new Scene(root, 250, 100));
-                stage.initModality(Modality.WINDOW_MODAL);
-                stage.initOwner(
-                        ((Node) mouseEvent.getSource()).getScene().getWindow());
+            Stage stage = new Stage();
+            Parent root = null;
+            try {
+                //root = FXMLLoader.load(getClass().getClassLoader().getResource("RenameModalWindow.fxml"));
+                FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("RenameModalWindow.fxml"));
+                root = loader.load();
+                ControllerRenameWindow controllerRenameWindow = loader.getController();
+                controllerRenameWindow.setMainController(controller);
+                //убрать костыль
+                if(toggle == 0)
+                    controllerRenameWindow.setTextToTextField(listViewServer.getSelectionModel().getSelectedItem().toString());
+                else
+                    controllerRenameWindow.setTextToTextField(listViewClient.getSelectionModel().getSelectedItem().toString());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            stage.setTitle("Renaming file");
+            stage.setScene(new Scene(root, 250, 100));
+            stage.initModality(Modality.WINDOW_MODAL);
+            stage.initOwner(
+                    ((Node) mouseEvent.getSource()).getScene().getWindow());
 
-                stage.show();
-           // });
+            stage.show();
         } else {
             // отраатываем одинарные клики
             switch (toggle) {
@@ -255,15 +249,15 @@ public class Controller {
             }
         }
     }
-    public void RenameFle (String oldName, String curr){
+    public void renameFle(String oldName, String curr){
         //отправляем
         switch (toggle) {
             case 0: // на сервере
-                helpers.SendBytesForRename(socketChannel.pipeline().context(ClientHandler.class), oldName,curr);
+                helpers.sendBytesForRename(socketChannel.pipeline().context(ClientHandler.class), oldName,curr);
                 break;
             case 1: // на клиенте
-                helpers.RenameFile(oldName, curr);
-                UpdateListClient();
+                helpers.renameFile(oldName, curr);
+                updateListClient();
                 break;
         }
     }
@@ -284,7 +278,7 @@ public class Controller {
         }
     }
 
-    public void OpenModalWindowProgress(MouseEvent mouseEvent){
+    public void openModalWindowProgress(MouseEvent mouseEvent){
         Stage stage = new Stage();
         Parent root = null;
         try {
@@ -293,7 +287,7 @@ public class Controller {
             root = loader.load();
             ControllerProgressWindow controllerProgressWindow = loader.getController();
             controllerProgressWindow.setMainController(controller, stage);
-            controllerProgressWindow.progressUpdate();
+            helpers.registerCloseModalWindowCallBack(controllerProgressWindow);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -305,5 +299,4 @@ public class Controller {
 
         stage.show();
     }
-
 }

@@ -1,6 +1,6 @@
-package JavaFXClient.Client;
+package com.artem.clientNetty;
 
-import CloudPackage.Helpers;
+import com.artem.helpers.Helpers;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -10,6 +10,7 @@ import javafx.application.Platform;
 public class ClientHandler extends ChannelInboundHandlerAdapter {
     private Controller controller;
     private Helpers helpers;
+    private long time;
 
     private boolean isProcessing = false;
     byte command;
@@ -31,7 +32,7 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
             if(!controller.isAuthorized()) {
                 if(buf.readByte() == 1){
                     controller.setAuthrized(true);
-                    controller.SendRequestForFilesList();
+                    controller.sendRequestForFilesList();
                 } else {
                     controller.setAuthrized(false);
                 }
@@ -41,19 +42,22 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
             if(!isProcessing) {
                 command = buf.readByte();
                 isProcessing = true;
+                System.out.printf("\nНачинаем измерять скорость передачи\n");
+                time = System.currentTimeMillis();
             }
 
             //получаем файл
             if(command == 0) {
-                if(helpers.Write(buf)){
+                if(helpers.write(buf)){
                     isProcessing = false;
-                    controller.UpdateListClient();
+                    controller.updateListClient();
+                    System.out.printf("Скорость приема (Клиент) - " + (System.currentTimeMillis() - time));
                 }
             }
 
             //получаем список файлов хранящихся на сервере
             if(command == 2) {
-                String fileName = helpers.GetStringFromBytes(buf);
+                String fileName = helpers.getStringFromBytes(buf);
                 System.out.printf("\nОтправляем список на сервер");
                 if(fileName != ""){
                     isProcessing = false;
@@ -71,7 +75,6 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
         } finally {
             buf.release();
         }
-
 
     }
 

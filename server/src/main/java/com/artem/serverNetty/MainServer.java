@@ -1,4 +1,4 @@
-package severNetty;
+package com.artem.serverNetty;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
@@ -10,7 +10,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 public class MainServer {
-    public static AuthService authService = new AuthService();
+    public static DB authService = new DB();
 
     public static void main(String[] args) throws Exception {
         authService.connect();

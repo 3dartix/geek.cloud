@@ -1,4 +1,4 @@
-package JavaFXClient.Client;
+package com.artem.clientNetty;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;

@@ -1,8 +1,7 @@
-package severNetty;
+package com.artem.serverNetty;
 
-import CloudPackage.Helpers;
+import com.artem.helpers.Helpers;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
@@ -10,7 +9,7 @@ import io.netty.channel.ChannelPromise;
 public class ServerHandler extends ChannelInboundHandlerAdapter {
     private String userName;
     private Helpers helpers;
-    private enum SERVICE_COMMANDS { GET_FILE, SEND_FILE, SEND_LIST_FILES, RENAME_FILE }
+    private long time;
 
     private boolean isProcessing = false;
 
@@ -29,50 +28,53 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
             if (!isProcessing) {
                 command = buf.readByte();
                 isProcessing = true;
+                System.out.printf("\nНачинаем измерять скорость передачи\n");
+                time = System.currentTimeMillis();
             }
 
             //получаем файл и сохраняем его в папке сервера
             if (command == 0) {
-                if (helpers.Write(buf)) {
+                if (helpers.write(buf)) {
                     isProcessing = false;
                     //отправляем обновленный список файлов клиенту
-                    helpers.SendListFilesToClient(ctx);
+                    helpers.sendListFilesToClient(ctx);
+                    System.out.printf("Скорость приема (Сервер) - " + (System.currentTimeMillis() - time));
                 }
             }
 
             // отправляем запрашиваемый файл клиенту
             if (command == 1) {
-                String fileName = helpers.GetStringFromBytes(buf);
+                String fileName = helpers.getStringFromBytes(buf);
                 if (fileName != "") {
-                    helpers.SendBytesFromFile(ctx, fileName);
+                    helpers.sendBytesFromFile(ctx, fileName);
                     isProcessing = false;
                 }
             }
 
             //формируем пачку байтов из списка файлов на сервере и отправляем клиенту
             if (command == 2) {
-                helpers.SendListFilesToClient(ctx);
+                helpers.sendListFilesToClient(ctx);
                 isProcessing = false;
             }
 
             //переименовываем файл в папке на сервере
             if (command == 3) {
-                String filesFormClient = helpers.GetStringFromBytes(buf);
+                String filesFormClient = helpers.getStringFromBytes(buf);
                 if (filesFormClient != "") {
                     System.out.printf("\nСтрока с файлами ::" + filesFormClient);
                     String[] strings = filesFormClient.split(";");
-                    helpers.RenameFile(strings[0], strings[1]);
-                    helpers.SendListFilesToClient(ctx);
+                    helpers.renameFile(strings[0], strings[1]);
+                    helpers.sendListFilesToClient(ctx);
                     isProcessing = false;
                 }
             }
 
             //удаляем файл на сервере
             if (command == 4) {
-                String filesFormClient = helpers.GetStringFromBytes(buf);
+                String filesFormClient = helpers.getStringFromBytes(buf);
                 if (filesFormClient != "") {
-                    helpers.DeleteFile(filesFormClient);
-                    helpers.SendListFilesToClient(ctx);
+                    helpers.deleteFile(filesFormClient);
+                    helpers.sendListFilesToClient(ctx);
                     isProcessing = false;
                 }
             }

@@ -6,7 +6,7 @@
 <?import javafx.scene.layout.*?>
 <?scenebuilder-stylesheet /css/Styles.css?>
 
-<VBox alignment="center" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="JavaFXClient.Client.ControllerProgressWindow">
+<VBox alignment="center" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.artem.clientNetty.ControllerProgressWindow">
     <stylesheets><URL value="@/Style.css" /></stylesheets>
    <Label text="Прогресс" fx:id="label">
       <opaqueInsets>

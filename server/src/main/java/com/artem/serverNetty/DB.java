@@ -1,8 +1,8 @@
-package severNetty;
+package com.artem.serverNetty;
 
 import java.sql.*;
 
-public class AuthService {
+public class DB {
     private Connection connection;
     private Statement stmt;
 
@@ -17,7 +17,7 @@ public class AuthService {
         }
     }
 
-    public boolean AuthCheck(String login, String pass){
+    public boolean authCheck(String login, String pass){
         boolean authOk = false;
         //boolean authOk = true;
         try {

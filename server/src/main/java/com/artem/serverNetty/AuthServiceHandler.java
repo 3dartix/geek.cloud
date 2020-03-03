@@ -1,6 +1,6 @@
-package severNetty;
+package com.artem.serverNetty;
 
-import CloudPackage.Helpers;
+import com.artem.helpers.Helpers;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -11,9 +11,9 @@ public class AuthServiceHandler extends ChannelInboundHandlerAdapter {
     private int command;
     private boolean isProcessing = false;
     private Helpers helpers = new Helpers("server_repository");
-    private AuthService authService;
+    private DB authService;
 
-    public AuthServiceHandler(AuthService authService) {
+    public AuthServiceHandler(DB authService) {
         this.authService = authService;
     }
 
@@ -31,23 +31,23 @@ public class AuthServiceHandler extends ChannelInboundHandlerAdapter {
 
             //авторизация, парсим байты на логин/пароль и сравниваем с БД
             if(command == 3){
-                String text = helpers.GetStringFromBytes(buf);
+                String text = helpers.getStringFromBytes(buf);
 
                 if(text != "") {
                     String[] strings = text.split(";");
 
-                    if(authService.AuthCheck(strings[0], strings[1])){
+                    if(authService.authCheck(strings[0], strings[1])){
                         System.out.printf("\nКлиент авторизован");
                         authOk = true;
                         ctx.pipeline().addLast(new ServerHandler(helpers, strings[0]));
                         //отправляем ответ клиенту, что авторизация прошла успешно
-                        helpers.SendAuthRequest(ctx, (byte)1);
+                        helpers.sendAuthRequest(ctx, (byte)1);
                         //задаем новый главный каталог и создаем папку для хранения файлов клиента
                         helpers.setMainCatalog(helpers.getMainCatalog()+"/"+strings[0]);
 
                     } else {
                         System.out.printf("\nКлиент не авторизован");
-                        helpers.SendAuthRequest(ctx, (byte)0);
+                        helpers.sendAuthRequest(ctx, (byte)0);
                     }
 
                     isProcessing = false;

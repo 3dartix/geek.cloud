@@ -1,8 +1,7 @@
-package JavaFXClient.Client;
+package com.artem.clientNetty;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
@@ -24,13 +23,13 @@ public class ControllerRenameWindow{
     }
 
     @FXML
-    public void Rename(ActionEvent event){
-        mainController.RenameFle(oldNameFile, textField.getText());
-        Close(event);
+    public void rename(ActionEvent event){
+        mainController.renameFle(oldNameFile, textField.getText());
+        close(event);
     }
 
     @FXML
-    public void Close(ActionEvent event){
+    public void close(ActionEvent event){
         //взвращаем кнопку
         Button button = (Button) event.getSource();
         //из кнопки возвращаем сцену
