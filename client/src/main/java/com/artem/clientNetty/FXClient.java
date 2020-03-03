@@ -20,7 +20,6 @@ public class FXClient  extends Application {
         primaryStage.setOnCloseRequest(event -> System.out.println("On Close"));
     }
 
-
     public static void main(String[] args) {
         launch(args);
     }

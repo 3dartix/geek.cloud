@@ -16,7 +16,6 @@ public class ControllerRenameWindow{
     public void setMainController(Controller mainController) {
         this.mainController = mainController;
     }
-
     public void setTextToTextField(String fileName){
         oldNameFile = fileName;
         textField.setText(oldNameFile);
