@@ -1,0 +1,100 @@
+#GET_FROM_SERVER {
+    -fx-border-radius: 0px;
+    -fx-background-radius: 0px;
+    -fx-background-color: #36959A;
+     -fx-background-image: url("images/arrow_down.png");
+     -fx-background-size: 15px;
+     -fx-background-repeat: no-repeat;
+     -fx-background-position: center;
+}
+
+#SEND_TO_SERVER {
+    -fx-border-radius: 0px;
+    -fx-background-radius: 0px;
+    -fx-background-color: #36959A;
+    -fx-background-image: url("images/arrow_up.png");
+    -fx-background-size: 15px;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center;
+}
+
+#DELETE {
+    -fx-border-radius: 0px;
+    -fx-background-radius: 0px;
+    -fx-background-color: #36959A;
+    -fx-background-image: url("images/delede.png");
+    -fx-background-size: 15px;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center;
+}
+
+#SEND_TO_SERVER:hover, #GET_FROM_SERVER:hover, #DELETE:hover {
+    -fx-background-color: #54b6bb;
+}
+
+#authPanel, #Rename, #Cancel {
+    -fx-border-radius: 0px;
+    -fx-background-radius: 0px;
+    -fx-background-color: #36959A;
+    -fx-text-fill: white;
+}
+
+#btnConnect{
+    -fx-border-radius: 0px;
+    -fx-background-radius: 0px;
+    -fx-background-color: #FFBF00;
+    -fx-text-fill: black;
+}
+
+#loginFieldz, #passFieldz {
+    -fx-text-fill: white;
+    -fx-background-color: #6692ff;
+    -fx-background-radius : 0em;
+    -fx-border-radius :0em;
+}
+
+#HBoxWithBnt {
+    -fx-background-color: #36959A;
+}
+
+#textField {
+    -fx-border-color: transparent;
+    -fx-background-color: transparent;
+}
+
+.root {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.list-view:focused .list-cell:filled:selected {
+    /* 3: (This is more specific and therefore overrides the above)*/
+    -fx-background-color: #36959A;
+}
+
+.list-cell:filled:selected {
+    /* 4: (Styling when out of focus)*/
+    -fx-background-color: #bcc1c4;
+    -fx-text-fill: white;
+}
+
+.list-cell:filled:hover {
+    -fx-background-color: #d3dada;
+/*-fx-text-fill: white;*/
+}
+
+
+.text-area .scroll-pane .content {
+-fx-background-color: transparent;
+}
+
+.text-area .scroll-pane .viewport .list-view {
+-fx-background-image: url("https://image.freepik.com/free-vector/blue-sky-with-clouds-patterned-background-vector_53876-85134.jpg");
+}
+
+.progress-bar .bar {
+    -fx-background-color:
+            -fx-box-border,
+            #36959A; /* this line is the background color of the bar */
+    -fx-background-insets: 0, 1, 2;
+}
